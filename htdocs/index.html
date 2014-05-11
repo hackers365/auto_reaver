@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+    <head>
+        <title>yac</title>
+        <meta name="viewport" http-equiv="content-type" content="text/html;charset=UTF-8;width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="/css/bootstrap.min.css">
+        <link rel="stylesheet" href="/css/main.css">
+    </head>
+    <body>
+        <script id="reaver_item" type="text/html">
+            <tr class="_result_row">
+                <%for(var i=0,l=data.length;i < l;i++) {%>
+                    <td <%if(i ==0){%>class="_mac_addr"<%}%>><%=data[i]%></td>
+                <%}%>
+            </tr>
+        </script>
+
+
+        <div class="container">
+            <div class="_container _init_status_confirm hide">
+                当前正在进行破解路由中,请选择以下操作.
+                <button class="btn btn-primary btn-lg _close_win">关闭当前窗口</button>
+                <button class="btn btn-primary btn-lg _show_pin_container">转到破解路由的状态界面</button>
+                <button class="btn btn-primary btn-lg _reset_all">重置为初始状态</button>
+            </div>
+            <div class="_container _get_pin_aps_container">
+                <span class="_get_pin_aps_panel">
+                    <button class="_get_pin_aps btn btn-primary btn-lg">获取可以pin的ap列表</button>
+                    <button class="_stop_get_pin_aps btn btn-primary hide">停止</button>
+                    <button class="_pin_aps btn btn-primary hide">pin选中的路由器</button>
+                    <img class="_loading" style="display:none;" src="/images/loading.gif" />
+                </span>
+                <div class="_result">
+                    <table class="table _table_result table-bordered sortable">
+                        <thead>
+                            <tr>
+                                <th>BSSID</th>
+                                <th>Channel</th>
+                                <th>RSSI</th>
+                                <th>WPS Version</th>
+                                <th>WPS Locked</th>
+                                <th>ESSID</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="_container _pin_aps_container hide">
+                <span class="_pin_aps_pannel">
+                    <button class="_pin_aps btn btn-primary btn-lg hide">继续pin破解</button>
+                    <button class="_stop_pin_aps btn btn-primary btn-lg">停止进行pin破解</button>
+                </span>
+                <div class="_current_pin_aps_info">
+                    mac: <span class="_current_pin_aps_mac"></span>
+                    essid: <span class="_current_pin_aps_essid"></span>
+                    当前进度: <span class="_current_pin_aps_progress"></span>
+                </div>
+                <textarea class="_pins_result_text form-control result_textarea" rows="30">
+                    
+                </textarea>
+            </div>
+        </div>
+        <script src="/js/jquery-1.11.1.min.js"></script>
+        <script src="/js/bootstrap.min.js"></script>
+        <script src="/js/template.min.js"></script>
+        <script src="/js/sorttable.js"></script>
+        <script src="/js/main.js"></script>
+    </body>
+</html>
+

@@ -1,0 +1,5 @@
+1. 获取pin列表(启动,停止)
+    tail -f /tmp/wps.log | while read line;do echo "rpush auto_pins '$line'" | redis-cli;done
+2. pin一个或多个路由器并回显
+    tail -f /tmp/reaver_out.log | while read line;do echo "rpush pin_aps '$line'"|redis-cli;done
+    
