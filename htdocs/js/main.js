@@ -1,6 +1,7 @@
 var __util = {
     time_handle: null,
     last_aps_info: {},
+    token_str: '',
     nl2br: function(str, is_xhtml) {
         var breakTag = (is_xhtml || typeof is_xhtml === 'undefined') ? '<br />' : '<br>';
         return (str + '').replace(/([^>\r\n]?)(\r\n|\n\r|\r|\n)/g, '$1'+ breakTag +'$2');
@@ -14,16 +15,19 @@ var __util = {
         $('._stop_get_pin_aps').removeClass('hide');
         $('._pin_aps').addClass('hide');
     },
+    get_param: function(param) {
+        return $.extend({token_str: __util.token_str}, param);
+    },
     get_pins_ap_list: function() {
         __util.last_aps_info = {};
-        $.getJSON('/util?act=start_get_pin', {}, function(data) {
+        $.getJSON('/util?act=start_get_pin', __util.get_param({}), function(data) {
             if (data.errcode == 0) {
                 __util.action_start_pins();
             } else {
                 if (data.errcode == 10) {
                     //提示是否要强制重新开始
                     if (confirm('当前可能有正在执行的扫描进程,是否强制结束重新开始?')) {
-                        $.getJSON('/util?act=force_auto_pin', {}, function() {
+                        $.getJSON('/util?act=force_auto_pin', __util.get_param({}), function() {
                             __util.action_start_pins();
                         });
                     }
@@ -62,7 +66,7 @@ var __util = {
     },
     get_result: function() {
         __util.time_handle = setTimeout(function() {
-            $.getJSON('/util?act=get_result', {}, function(data) {
+            $.getJSON('/util?act=get_result', __util.get_param({}), function(data) {
             if (data.errcode == 0) {
                 __util.render_html(data);
                 __util.get_result();
@@ -84,7 +88,7 @@ var __util = {
         }
     },
     stop_get_pins: function() {
-        $.getJSON('/util?act=force_stop_auto_pin', {}, function(data) {
+        $.getJSON('/util?act=force_stop_auto_pin', __util.get_param({}), function(data) {
             if (data.errcode == 0) {
                 __util.post_get_result();
             }
@@ -107,7 +111,7 @@ var __util = {
         $table.find('._mac_addr._td_highlight').each(function() {
             mac_addr.push($(this).text());
         });
-        $.getJSON('/util?act=pin_aps', {mac_addr: mac_addr.join(' ')}, function(data) {
+        $.getJSON('/util?act=pin_aps', __util.get_param({mac_addr: mac_addr.join(' ')}), function(data) {
             if (data.errcode == 0) {
                 if (__util.time_handle) {
                     clearTimeout(__util.time_handle);
@@ -128,7 +132,7 @@ var __util = {
         }
     },
     stop_pin_aps: function() {
-        $.getJSON('/util?act=stop_pin_aps', function(data) {
+        $.getJSON('/util?act=stop_pin_aps', __util.get_param({}), function(data) {
             if (data.errcode == 0) {
                 if (__util.time_handle) {
                     clearTimeout(__util.time_handle);
@@ -138,7 +142,7 @@ var __util = {
         });
     },
     get_pin_aps_result: function() {
-        $.getJSON('/util?act=pin_aps_result', function(data) {
+        $.getJSON('/util?act=pin_aps_result', __util.get_param({}), function(data) {
             if (data.errcode == 0) {
                 if (data.extra_data && data.extra_data.current_pin_mac) {
                     $('._current_pin_aps_mac').text(data.extra_data.current_pin_mac);
@@ -155,18 +159,31 @@ var __util = {
             }
         });
     },
+    get_token: function() {
+        var uuid = ''; 
+        for (var i = 0; i < 32; i++) {
+            uuid += Math.floor(Math.random() * 16).toString(16);
+        }   
+        return uuid;
+    },
     init_status: function() {
-        $.getJSON('/util?act=get_status', function(data) {
-            if (data.errcode == 0) {
-                //是否正在扫描
-                if (data.data_list.current_reaver_pid || data.data_list.current_reaver_sh_pid) {
-                    $('._init_status_confirm').removeClass('hide').siblings('._container').addClass('hide');
+        var token_str = __util.get_token();
+        __util.token_str = token_str;
+        $.getJSON('/util?act=set_token', {token_str: token_str}, function() {
+            $.getJSON('/util?act=get_status', __util.get_param({}), function(data) {
+                if (data.errcode == 0) {
+                    //是否正在扫描
+                    if (data.data_list.current_reaver_pid || data.data_list.current_reaver_sh_pid) {
+                        $('._init_status_confirm').removeClass('hide').siblings('._container').addClass('hide');
+                    }
                 }
-            }
+            });
         });
+
+        
     },
     reset_all: function() {
-        $.getJSON('/util?act=reset_all', function() {
+        $.getJSON('/util?act=reset_all', __util.get_param({}), function() {
             location.reload();
         });
     },

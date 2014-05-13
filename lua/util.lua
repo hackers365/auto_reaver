@@ -7,7 +7,7 @@ local sock = ngx.socket.tcp()
 local ngx_log = ngx.log
 local re_match = ngx.re.match
 local util_dict = ngx.shared.util
-local shared_dict = {auto_pins='auto_pins'}
+local shared_dict = {auto_pins='auto_pins', token_str='token_str'}
 local redis_dict = {
     auto_pins='auto_pins', 
     pin_aps='pin_aps', 
@@ -55,7 +55,7 @@ end
 
 function _M:get_output(cache_id, callback_function)
     local line_d = ''
-    local read_line = 5
+    local read_line = 100
     local errcode = 0
     local all_json = {}
     red = self:get_redis()
@@ -194,6 +194,31 @@ function _M:reset_all()
     red:del(redis_dict.current_reaver_pid)
     red:del(redis_dict.current_reaver_sh_pid)
     util_dict:delete(shared_dict.auto_pins)
+end
+
+function _M:set_token(token_str)
+    return util_dict:set(shared_dict.token_str, token_str)
+end
+
+function _M:get_token()
+    return util_dict:get(shared_dict.token_str)
+end
+
+function _M:is_allow_visit(token_str)
+    local token = self:get_token()
+    return token == token_str
+end
+
+if args.act == 'set_token' then
+    _M:set_token(args.token_str)
+    _M:get_result(0, '设置成功.')
+    return
+end
+
+local is_allow = _M:is_allow_visit(args.token_str)
+if not is_allow then
+    _M:get_result(-1, 'token_str过期')
+    return
 end
 
 if args.act == 'start_get_pin' then
