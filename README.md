@@ -17,3 +17,7 @@ auto crack route psk via pin
 * 保存已破解出来的密码
 * 在扫描出来可以pin的路由器界面根据破解出来的密码库来高亮显示
 * 更友好的操作界面
+
+
+* @author by hackers365
+* blog: http://hackers365.com
