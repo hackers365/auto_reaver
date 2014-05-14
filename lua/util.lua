@@ -72,9 +72,9 @@ function _M:get_output(cache_id, callback_function)
         end
         --ngx_log(ngx.ERR, line)
         if callback_function then
-            table.insert(all_json, callback_function(line))
+            table.insert(all_json, 0, callback_function(line))
         else
-            table.insert(all_json, line)
+            table.insert(all_json, 0, line)
         end
 
         if line == '$exit$' then
