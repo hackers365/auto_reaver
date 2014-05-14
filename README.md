@@ -3,6 +3,10 @@ auto_reaver
 
 auto crack route psk via pin
 
+# 操作界面
+
+![初始界面](https://raw.githubusercontent.com/hackers365/auto_reaver/master/doc/init.png)
+
 
 # To Do
 * mac地址对应的essid的地址库
