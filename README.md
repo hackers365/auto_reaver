@@ -6,6 +6,9 @@ auto crack route psk via pin
 # 操作界面
 
 ![初始界面](https://raw.githubusercontent.com/hackers365/auto_reaver/master/doc/init.png)
+![扫描ap](https://raw.githubusercontent.com/hackers365/auto_reaver/master/doc/scan.png)
+![pin某个路由器](https://raw.githubusercontent.com/hackers365/auto_reaver/master/doc/pin_aps.png)
+![正在pin中](https://raw.githubusercontent.com/hackers365/auto_reaver/master/doc/doing_pin.png)
 
 
 # To Do
