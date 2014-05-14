@@ -144,8 +144,8 @@ var __util = {
     get_pin_aps_result: function() {
         $.getJSON('/util?act=pin_aps_result', __util.get_param({}), function(data) {
             if (data.errcode == 0) {
-                if (data.extra_data && data.extra_data.current_pin_mac) {
-                    $('._current_pin_aps_mac').text(data.extra_data.current_pin_mac);
+                if (data.extra_data && data.extra_data.current_pin_bssid) {
+                    $('._current_pin_aps_mac').text(data.extra_data.current_pin_bssid);
                     if (__util.last_aps_info[data.current_pin_aps_mac]) {
                         $('._current_pin_aps_essid').text(__util.last_aps_info[data.current_pin_aps_mac][5]);
                     }

@@ -13,7 +13,7 @@ do
             kill -SIGINT $pid
             exit
         fi
-    elif echo $line|grep -q 'need exit';then
+    elif echo $line|grep -q '$exit$';then
         echo 'tail log exit'
         exit
     else

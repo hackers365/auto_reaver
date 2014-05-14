@@ -9,13 +9,21 @@ local re_match = ngx.re.match
 local util_dict = ngx.shared.util
 local shared_dict = {auto_pins='auto_pins', token_str='token_str'}
 local redis_dict = {
-    auto_pins='auto_pins', 
-    pin_aps='pin_aps', 
-    current_reaver_sh_pid='current_reaver_sh_pid', 
+    auto_pins='auto_pins',
+    pin_aps='pin_aps',
+    current_reaver_sh_pid='current_reaver_sh_pid',
     current_reaver_pid='current_reaver_pid',
-    current_pin_mac='current_pin_mac'
+    current_pin_bssid='current_pin_bssid',
+    bssid_info={
+        bssid='bssid',
+        password='password',
+        psk='psk',
+        pin='pin',
+        essid='essid'
+    }
 }
 local red = nil
+local prefix = 'bssid:'
 
 local args = ngx.req.get_uri_args()
 local _M = {}
@@ -70,10 +78,28 @@ function _M:get_output(cache_id, callback_function)
         if line == ngx.null then
             break
         end
-        --ngx_log(ngx.ERR, line)
+        --scan bssid
         if callback_function then
-            table.insert(all_json, 0, callback_function(line))
+            split_t = callback_function(line)
+            if split_t then
+                table.insert(all_json, 0, split_t)
+            end
         else
+            local current_pin_bssid = self:get_value_from_redis(redis_dict.current_pin_bssid)
+            local bssid_cache_id = prefix .. current_pin_bssid
+
+            --crack pin
+            local m, err = re_match(line, 'WPS PIN[^\']*\'(.*)\'')
+            if m then
+                red:hset(bssid_cache_id, redis_dict.bssid_info.pin, m[1])
+                --ngx_log(ngx.ERR, 'found pin:' .. m[1])
+            end
+            local m, err = re_match(line, 'WPA PSK[^\']*\'(.*)\'')
+            if m then
+                --ngx_log(ngx.ERR, 'found psk:' .. m[1])
+                red:hset(bssid_cache_id, redis_dict.bssid_info.psk, m[1])
+            end
+            
             table.insert(all_json, 0, line)
         end
 
@@ -86,14 +112,42 @@ function _M:get_output(cache_id, callback_function)
     return errcode, all_json
 end
 
+--store aps info to redis
+function _M:store_aps_info(t)
+    local red = self:get_redis()
+    local cache_id = prefix .. t['bssid']
+    local ok = red:exists(cache_id)
+    local r = nil
+    if 0 == ok then
+        red:hset(cache_id, redis_dict.bssid_info.essid, t['essid'])
+    else
+        return red:hgetall(cache_id)
+    end
+    return r
+end
+
+--get aps out
 function _M:get_pin_aps_output()
     local cb_function = function(line)
-        local m, err = re_match(line, '(?:[0-9A-Z]{2}:){5}')
+        local m, err = re_match(line, '^(?:[0-9A-Z]{2}:){5}')
         if m then
             local t = split(line)
-            return t
+            local ssid = table.concat(t, '', 6)
+            local new_t = {
+                bssid=t[1],
+                channel=t[2],
+                rssi=t[3],
+                wps_version=t[4],
+                wps_locked=t[5],
+                essid=ssid
+            }
+            local t_store = self:store_aps_info(new_t)
+            if t_store then
+                new_t = extend_table(new_t, t_store)
+            end
+            return new_t
         end
-        return ''
+        return nil
     end
     local errcode, all_json = self:get_output(redis_dict.auto_pins, cb_function)
     self:get_result(errcode, all_json)
@@ -166,20 +220,20 @@ function _M:start_pin_aps(mac_addr)
         self:get_result(10, 'current reaver is running')
         return
     end
-    
+
     local cmd = "/data/www/pj/lua/auto_reaver/auto_reaver.sh '" .. mac_addr .. "' &"
     ngx_log(ngx.ERR, cmd)
     local r = self:execute(cmd)
     local red = self:get_redis()
     red:del(redis_dict.pin_aps)
-    
+
     self:get_result(0, '执行成功.')
 end
 
 function _M:reset_all()
     local status_t = self:get_status()
     local pids_t = {}
-    for i,v in pairs(status_t) 
+    for i,v in pairs(status_t)
     do
         if ngx.null ~= v then
             table.insert(pids_t, v)
@@ -206,9 +260,44 @@ end
 
 function _M:is_allow_visit(token_str)
     local token = self:get_token()
-    return token == token_str
+    return token == token_str or args.i_am_cmd
 end
 
+--cmd client api start
+function _M:set_ap_info()
+    local info_table = {
+        psk=args.psk,
+        pin=args.pin
+    }
+    local cache_id = prefix .. args.bssid
+    local red = self:get_redis()
+    red:hmset(cache_id, info_table)
+end
+
+function _M:already_pj_bssid()
+    local red = self:get_redis()
+    local cache_id = prefix .. args.bssid
+    local psk, err = red:hget(cache_id, 'psk')
+
+    if psk == ngx.null then
+        ngx.print('fail')
+    else
+        ngx.print('success')
+    end
+    --~ if info_table then
+        --~ self:get_result(0, 'success')
+    --~ else
+        --~ self:get_result(1, 'fail')
+    --~ end
+end
+
+function _M:set_current_pin_bssid()
+    local red = self:get_redis()
+    red:set(redis_dict.current_pin_bssid, args.bssid)
+    self:get_result(0, 'success')
+end
+
+--end cmd client api 
 if args.act == 'set_token' then
     _M:set_token(args.token_str)
     _M:get_result(0, '设置成功.')
@@ -244,7 +333,7 @@ elseif args.act == 'force_pin_aps' then
     _M:force_pin_aps(args.mac_addr)
 elseif args.act == 'pin_aps_result' then
     local errcode, alljson = _M:get_output(redis_dict.pin_aps)
-    _M:get_result(errcode, alljson, {current_pin_mac=_M:get_value_from_redis(redis_dict.current_pin_mac)})
+    _M:get_result(errcode, alljson, {current_pin_bssid=_M:get_value_from_redis(redis_dict.current_pin_bssid)})
 elseif args.act == 'stop_pin_aps' then
     _M:stop_pin_aps()
 elseif args.act == 'get_status' then
@@ -252,6 +341,12 @@ elseif args.act == 'get_status' then
 elseif args.act == 'reset_all' then
     _M:reset_all()
     _M:get_result(0, '重置成功')
+elseif args.act == 'set_ap_info' then
+    _M:set_ap_info()
+elseif args.act == 'already_pj_bssid' then
+    _M:already_pj_bssid()
+elseif args.act == 'set_current_pin_bssid' then
+    _M:set_current_pin_bssid()
 else
     _M:get_result(0, '')
 end
