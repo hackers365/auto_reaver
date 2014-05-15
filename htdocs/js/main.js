@@ -46,6 +46,9 @@ var __util = {
             }
             html = template.render('reaver_item', render_data);
             $t_result.append(html);
+            if (render_data.data.pin && render_data.data.psk) {
+                $('tr[pin=' + render_data.data.pin + ']').popover({trigger: 'click', title: 'yeah', placement: 'bottom'})
+            }
         }
     },
     post_get_result: function() {
@@ -80,11 +83,14 @@ var __util = {
     },
     click_result_row: function() {
         var $this = $(this);
+        if ($this.attr('pin') && $this.attr('psk')) {
+            return;
+        }
         if ($this.hasClass('highlight')) {
             $this.removeClass('highlight').find('td._mac_addr').removeClass('_td_hightlight');
         } else {
-            $this.addClass('highlight').siblings('tr').removeClass('highlight').find('td._mac_addr').removeClass('_td_highlight');
-            $this.find('td._mac_addr').addClass('_td_highlight');
+            //$this.addClass('highlight').siblings('tr').removeClass('highlight').find('td._mac_addr').removeClass('_td_highlight');
+            $this.addClass('highlight').find('td._mac_addr').addClass('_td_highlight');
         }
     },
     stop_get_pins: function() {
@@ -141,29 +147,43 @@ var __util = {
             }
         });
     },
+    action_output_pin_aps_result: function(data) {
+        var $t = $('._pins_result_text'),
+            line_info = '';
+
+        for(var i=data.data_list.length - 1;i>=0;i--) {
+            line_info = line_info + data.data_list[i] + '\n';
+        }
+        $t.val(line_info + $t.val());
+    },
     get_pin_aps_result: function() {
         $.getJSON('/util?act=pin_aps_result', __util.get_param({}), function(data) {
             if (data.errcode == 0) {
-                if (data.extra_data && data.extra_data.current_pin_bssid) {
-                    $('._current_pin_aps_mac').text(data.extra_data.current_pin_bssid);
-                    if (__util.last_aps_info[data.current_pin_aps_mac]) {
-                        $('._current_pin_aps_essid').text(__util.last_aps_info[data.current_pin_aps_mac][5]);
+                if (data.extra_data ) {
+                    if (data.extra_data.current_pin_bssid) {
+                        $('._current_pin_aps_bssid').text(data.extra_data.current_pin_bssid);
+                    }
+                    if (data.extra_data.current_pin_essid) {
+                        $('._current_pin_aps_essid').text(data.extra_data.current_pin_essid);
+                    }
+                    if (data.extra_data.current_percent) {
+                        $('._current_percent').text(data.extra_data.current_percent);
                     }
                 }
-
-                var $t = $('._pins_result_text');
-                if (data.data_list.length) {
-                    $t.val(data.data_list.join('\n') + '\n' + $t.val());
-                }
+                __util.action_output_pin_aps_result(data);
+                //$t.val(data.data_list.join('\n') + '\n' + $t.val());
                 __util.time_handle = setTimeout(__util.get_pin_aps_result, 2000);
+            } else if(data.errcode == 1) {
+                __util.action_output_pin_aps_result(data);
+                __util.toggle_pin_aps_pannel('hide');
             }
         });
     },
     get_token: function() {
-        var uuid = ''; 
+        var uuid = '';
         for (var i = 0; i < 32; i++) {
             uuid += Math.floor(Math.random() * 16).toString(16);
-        }   
+        }
         return uuid;
     },
     init_status: function() {
@@ -180,7 +200,7 @@ var __util = {
             });
         });
 
-        
+
     },
     reset_all: function() {
         $.getJSON('/util?act=reset_all', __util.get_param({}), function() {
@@ -191,9 +211,31 @@ var __util = {
         $(this).parent('div._container').addClass('hide')
         __util.switch_containter('pin_aps');
         __util.time_handle = setTimeout(__util.get_pin_aps_result, 2000);
-        __util.toggle_pin_aps_pannel('show');        
+        __util.toggle_pin_aps_pannel('show');
+    },
+    show_pj_list: function() {
+        var $pj_div = $('._show_pj_result_div');
+        $pj_div.removeClass('hide').siblings('._container').addClass('hide');
+        $.getJSON('/util?act=get_already_pj_info', __util.get_param({}), function(data) {
+            if (data.errcode == 0) {
+                var $tbody = $('._tbody_pj_result');
+                $tbody.html('');
+                for (var i = 0,j=data.data_list.length; i < j - 1; i++){
+                    var render_data = {
+                        data: data.data_list[i]
+                    };
+                    if (render_data.data.ctime) {
+                        render_data.data.ctime = new Date(render_data.data.ctime * 1000).toLocaleString();
+                    }
+                    var html = template.render('pj_item', render_data);
+                    $tbody.append(html);
+                }
+            }
+        });
+    },
+    back_main: function() {
+        $('._get_pin_aps_container').removeClass('hide').siblings('._container').addClass('hide')
     }
-    
 }
 
 $(function() {
@@ -210,7 +252,10 @@ $(function() {
     .on('click', '._stop_pin_aps', __util.stop_pin_aps)
     .on('click', '._show_pin_container', __util.show_pin_aps_status)
     //重置所有的状态
-    .on('click', '._reset_all', __util.reset_all);
+    .on('click', '._reset_all', __util.reset_all)
+
+    .on('click', '._show_pj_list', __util.show_pj_list)
     
+    .on('click', '._back_main', __util.back_main);
     __util.init_status();
 });

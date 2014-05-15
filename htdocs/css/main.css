@@ -1,2 +1,3 @@
 .highlight { background-color: red; }
 .hide {display: none;}
+tr.already_pj {background-color: yellow; }

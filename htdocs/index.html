@@ -8,19 +8,24 @@
     </head>
     <body>
         <script id="reaver_item" type="text/html">
-            <tr class="_result_row">
+            <tr class="_result_row <%if(data.psk && data.pin){%>_already_pj already_pj" psk="<%=data.psk%>" pin="<%=data.pin%>" title="psk: <%=data.psk%>   pin:<%=data.pin%><%}%>">
                 <td class="_mac_addr"><%=data.bssid%></td>
                 <td><%=data.channel%></td>
                 <td><%=data.rssi%></td>
                 <td><%=data.wps_version%></td>
                 <td><%=data.wps_locked%></td>
                 <td><%=data.essid%></td>
-<!--
-                <%for(var i=0,l=data.length;i < l;i++) {%>
-                    <td <%if(i ==0){%>class="_mac_addr"<%}%>><%=data[i]%></td>
-                <%}%>
--->
             </tr>
+        </script>
+        
+        <script id="pj_item" type="text/html">
+            <tr>
+                <td><%=data.bssid%></td>
+                <td><%=data.essid%></td>
+                <td><%=data.psk%></td>
+                <td><%=data.pin%></td>
+                <td><%=data.ctime%></td>
+            <tr>
         </script>
 
 
@@ -36,6 +41,7 @@
                     <button class="_get_pin_aps btn btn-primary btn-lg">获取可以pin的ap列表</button>
                     <button class="_stop_get_pin_aps btn btn-primary hide">停止</button>
                     <button class="_pin_aps btn btn-primary hide">pin选中的路由器</button>
+                    <button class="_show_pj_list btn btn-primary">查看已破解的路由器列表</button>
                     <img class="_loading" style="display:none;" src="/images/loading.gif" />
                 </span>
                 <div class="_result">
@@ -62,13 +68,28 @@
                     <button class="_stop_pin_aps btn btn-primary btn-lg">停止进行pin破解</button>
                 </span>
                 <div class="_current_pin_aps_info">
-                    mac: <span class="_current_pin_aps_mac"></span>
+                    bssid: <span class="_current_pin_aps_bssid"></span>
                     essid: <span class="_current_pin_aps_essid"></span>
-                    当前进度: <span class="_current_pin_aps_progress"></span>
+                    当前进度: <span class="_current_percent"></span>
                 </div>
                 <textarea class="_pins_result_text form-control result_textarea" rows="30">
-                    
+
                 </textarea>
+            </div>
+            <div class="_container _show_pj_result_div hide">
+                <button class="btn btn-primary btn-lg _back_main">返回</button>
+                <table class="table table-bordered _pj_result">
+                    <thead>
+                        <th>bssid</th>
+                        <th>essid</th>
+                        <th>psk</th>
+                        <th>pin</th>
+                        <th>date</th>
+                    </thead>
+                    <tbody class="_tbody_pj_result">
+                    
+                    </tbody>
+                <table>
             </div>
         </div>
         <script src="/js/jquery-1.11.1.min.js"></script>
@@ -78,4 +99,3 @@
         <script src="/js/main.js"></script>
     </body>
 </html>
-
