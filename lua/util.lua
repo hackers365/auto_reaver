@@ -106,7 +106,7 @@ function _M:get_output(cache_id, callback_function)
                 red:hset(pj_prefix, current_pin_bssid, '')
             end
             
-            local m,err = re_match(line,'([0-9]\\.[0-9]{2}%) complete')
+            local m,err = re_match(line,'([0-9]{1,2}\\.[0-9]{2}%) complete')
             if m then
                 red:set(redis_dict.current_percent, m[1])
             end
