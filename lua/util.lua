@@ -88,24 +88,24 @@ function _M:get_output(cache_id, callback_function)
                 table.insert(all_json, split_t)
             end
         else
-            local current_pin_bssid = self:get_value_from_redis(redis_dict.current_pin_bssid)
-            local bssid_cache_id = prefix .. current_pin_bssid
-
-            --crack pin
-            local m, err = re_match(line, 'WPS PIN[^\']*\'(.*)\'')
-            if m then
-                red:hset(bssid_cache_id, redis_dict.bssid_info.pin, m[1])
-                red:hset(bssid_cache_id, 'ctime', ngx.time())
-                --ngx_log(ngx.ERR, 'found pin:' .. m[1])
-                red:hset(pj_prefix, current_pin_bssid, '')
-            end
-            local m, err = re_match(line, 'WPA PSK[^\']*\'(.*)\'')
-            if m then
-                --ngx_log(ngx.ERR, 'found psk:' .. m[1])
-                red:hset(bssid_cache_id, redis_dict.bssid_info.psk, m[1])
-                red:hset(pj_prefix, current_pin_bssid, '')
-            end
-            
+            --~ local current_pin_bssid = self:get_value_from_redis(redis_dict.current_pin_bssid)
+            --~ local bssid_cache_id = prefix .. current_pin_bssid
+--~ 
+            --~ --crack pin
+            --~ local m, err = re_match(line, 'WPS PIN[^\']*\'(.*)\'')
+            --~ if m then
+                --~ red:hset(bssid_cache_id, redis_dict.bssid_info.pin, m[1])
+                --~ red:hset(bssid_cache_id, 'ctime', ngx.time())
+                --~ --ngx_log(ngx.ERR, 'found pin:' .. m[1])
+                --~ red:hset(pj_prefix, current_pin_bssid, '')
+            --~ end
+            --~ local m, err = re_match(line, 'WPA PSK[^\']*\'(.*)\'')
+            --~ if m then
+                --~ --ngx_log(ngx.ERR, 'found psk:' .. m[1])
+                --~ red:hset(bssid_cache_id, redis_dict.bssid_info.psk, m[1])
+                --~ red:hset(pj_prefix, current_pin_bssid, '')
+            --~ end
+            --~ 
             local m,err = re_match(line,'([0-9]{1,2}\\.[0-9]{2}%) complete')
             if m then
                 red:set(redis_dict.current_percent, m[1])
@@ -324,6 +324,17 @@ function _M:set_current_pin_bssid()
     self:get_result(0, 'success')
 end
 
+function _M:set_pin_psk()
+    local red = self:get_redis()
+    if args.bssid and args.key and args.value then
+        local cache_id = prefix .. args.bssid
+        red:hset(pj_prefix, args.bssid, '')
+        red:hset(cache_id, args.key, args.value)
+        red:hsetnx(cache_id, 'ctime', ngx.time())
+    end
+    self:get_result(0, 'success')
+end
+
 --end cmd client api
 if args.act == 'set_token' then
     _M:set_token(args.token_str)
@@ -387,6 +398,8 @@ elseif args.act == 'set_current_pin_bssid' then
     _M:set_current_pin_bssid()
 elseif args.act == 'get_already_pj_info' then
     _M:get_already_pj_info()
+elseif args.act == 'set_pin_psk' then
+    _M:set_pin_psk()
 else
     _M:get_result(0, '')
 end

